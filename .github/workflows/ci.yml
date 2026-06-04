@@ -52,12 +52,50 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Linux x86_64 (glibc)
           - os: ubuntu-24.04
             target: x86_64-unknown-linux-gnu
+            cross: false
+
+          # Linux x86_64 static (musl)
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-musl
+            cross: true
+
+          # Linux aarch64 static (musl)
+          - os: ubuntu-24.04
+            target: aarch64-unknown-linux-musl
+            cross: true
+
+          # Linux aarch64 (glibc)
+          - os: ubuntu-24.04
+            target: aarch64-unknown-linux-gnu
+            cross: true
+
+          # Linux armv7 static (musl)
+          - os: ubuntu-24.04
+            target: armv7-unknown-linux-musleabihf
+            cross: true
+
+          # macOS x86_64 (cross-compiled from Apple Silicon)
+          - os: macos-14
+            target: x86_64-apple-darwin
+            cross: false
+
+          # macOS aarch64 (Apple Silicon)
           - os: macos-14
             target: aarch64-apple-darwin
+            cross: false
+
+          # Windows x86_64 (MSVC)
           - os: windows-2022
             target: x86_64-pc-windows-msvc
+            cross: false
+
+          # Windows x86_64 (MinGW)
+          - os: windows-2022
+            target: x86_64-pc-windows-gnu
+            cross: false
 
     steps:
       - name: Checkout
@@ -72,6 +110,16 @@ jobs:
         if: matrix.target == 'x86_64-pc-windows-msvc'
         uses: ilammy/setup-nasm@v1
 
+      - name: Install cross (for cross-compilation)
+        if: matrix.cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Install musl tools (Linux musl)
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+
       - name: Cache cargo
         uses: actions/cache@v4
         with:
@@ -81,14 +129,20 @@ jobs:
             target
           key: ${{ matrix.target }}-cargo-${{ hashFiles('Cargo.lock') }}
 
-      - name: Build
+      - name: Build (native)
+        if: ${{ !matrix.cross }}
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Run unit tests
+      - name: Build (cross)
+        if: matrix.cross
+        run: cross build --release --target ${{ matrix.target }}
+
+      - name: Run unit tests (native)
+        if: ${{ !matrix.cross }}
         run: cargo test --release --lib
 
       - name: Run integration tests (Linux)
-        if: matrix.os == 'ubuntu-24.04'
+        if: ${{ !matrix.cross && matrix.os == 'ubuntu-24.04' }}
         run: |
           ./tests/fixtures.sh
           cargo test --test integration --release
