@@ -3,7 +3,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
-docker build -t runlike_fixture -f ../dockerfiles/Dockerfile ../dockerfiles/
+docker build -t runlike_fixture -f ../test/fixture-image/Dockerfile ../test/fixture-image/
 
 containers=$(docker ps -a --format '{{.Names}}' | grep runlike_fixture || true)
 if [[ -n "$containers" ]]; then
