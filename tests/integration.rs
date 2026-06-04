@@ -5,20 +5,42 @@ fn runlikers(args: &[&str]) -> String {
         .args(args)
         .output()
         .expect("failed to run runlikers");
-    assert!(output.status.success(), "runlikers failed: {}", String::from_utf8_lossy(&output.stderr));
+    assert!(
+        output.status.success(),
+        "runlikers failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
     String::from_utf8_lossy(&output.stdout).to_string()
 }
 
 fn expect_contains(hay: &str, needle: &str, fixture: &str) {
-    assert!(hay.contains(needle), "fixture {}: expected '{}' not found in:\n{}", fixture, needle, hay);
+    assert!(
+        hay.contains(needle),
+        "fixture {}: expected '{}' not found in:\n{}",
+        fixture,
+        needle,
+        hay
+    );
 }
 
 fn expect_not_contains(hay: &str, needle: &str, fixture: &str) {
-    assert!(!hay.contains(needle), "fixture {}: unexpected '{}' found in:\n{}", fixture, needle, hay);
+    assert!(
+        !hay.contains(needle),
+        "fixture {}: unexpected '{}' found in:\n{}",
+        fixture,
+        needle,
+        hay
+    );
 }
 
 fn starts_with(hay: &str, prefix: &str, fixture: &str) {
-    assert!(hay.starts_with(prefix), "fixture {}: expected to start with '{}', got:\n{}", fixture, prefix, hay);
+    assert!(
+        hay.starts_with(prefix),
+        "fixture {}: expected to start with '{}', got:\n{}",
+        fixture,
+        prefix,
+        hay
+    );
 }
 
 #[test]
