@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
-FROM rust:1.85-alpine AS chef
-RUN apk add --no-cache musl-dev
+FROM rust:1.85-slim-bookworm AS chef
+RUN apt-get update && apt-get install -y --no-install-recommends musl-dev
 RUN cargo install cargo-chef --locked
 WORKDIR /app
 
