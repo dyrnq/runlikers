@@ -57,6 +57,11 @@ fn inspect_via_cli(container: &str, inspector: &mut Inspector) {
             eprintln!("error running docker inspect: {}", e);
             std::process::exit(1);
         });
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        eprintln!("error: docker inspect failed: {}", stderr.trim());
+        std::process::exit(1);
+    }
     let json = String::from_utf8_lossy(&output.stdout);
     inspector.set_container_facts(&json).unwrap_or_else(|e| {
         eprintln!("error parsing docker inspect output: {}", e);
@@ -68,6 +73,10 @@ fn inspect_via_cli(container: &str, inspector: &mut Inspector) {
 async fn main() {
     let cli = Cli::parse();
 
+    if cli.inspect && cli.container.is_none() {
+        eprintln!("error: --inspect requires a container name");
+        std::process::exit(1);
+    }
     if cli.container.is_none() && !cli.stdin {
         eprintln!("error: either provide a container name or use --stdin");
         std::process::exit(1);
