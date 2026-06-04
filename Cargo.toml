@@ -23,3 +23,8 @@ bollard = "0.21"
 [[bin]]
 name = "runlikers"
 path = "src/main.rs"
+
+[[test]]
+name = "integration"
+path = "tests/integration.rs"
+harness = true

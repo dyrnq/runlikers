@@ -84,8 +84,14 @@ jobs:
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Run tests
-        run: cargo test --release
+      - name: Run unit tests
+        run: cargo test --release --lib
+
+      - name: Run integration tests (Linux)
+        if: matrix.os == 'ubuntu-24.04'
+        run: |
+          ./tests/fixtures.sh
+          cargo test --test integration --release
 
   # ---- Docker image (main branch) ----
   docker:
