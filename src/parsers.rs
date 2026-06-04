@@ -115,7 +115,7 @@ impl Inspector {
         }
 
         let joined = if self.pretty {
-            parameters.join(" \\\n\t")
+            parameters.join(&format!(" \\\n{}", self.indent))
         } else {
             parameters.join(" ")
         };

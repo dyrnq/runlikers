@@ -44,6 +44,10 @@ struct Cli {
     #[arg(long)]
     tidy: bool,
 
+    /// Pretty indent string (default: tab, e.g. '    ' for 4 spaces)
+    #[arg(long, default_value = "\\t")]
+    indent: String,
+
     /// Docker daemon host (e.g. unix:///var/run/docker.sock, tcp://192.168.1.100:2375, ssh://user@host)
     #[arg(short = 'H', long)]
     host: Option<String>,
@@ -86,6 +90,7 @@ async fn main() {
     inspector.use_mount_flag = cli.mount;
     inspector.tidy = cli.tidy;
     inspector.docker_host = cli.host;
+    inspector.indent = cli.indent;
 
     if let Some(container) = &cli.container {
         if cli.inspect {

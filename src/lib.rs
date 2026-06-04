@@ -13,6 +13,7 @@ pub struct Inspector {
     pub use_mount_flag: bool,
     pub tidy: bool,
     pub docker_host: Option<String>,
+    pub indent: String,
     pub container_facts: Option<Value>,
     pub image_facts: Option<Value>,
 }
@@ -27,6 +28,7 @@ impl Inspector {
             use_mount_flag: false,
             tidy: false,
             docker_host: None,
+            indent: String::new(),
             container_facts: None,
             image_facts: None,
         }
