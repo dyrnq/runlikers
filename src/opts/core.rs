@@ -99,7 +99,7 @@ impl Inspector {
     }
 
     pub fn parse_volumes(&self, options: &mut Vec<String>) {
-        let mounts = self.get_container_fact_list("HostConfig.Mounts");
+        let mounts = self.get_container_fact_list("Mounts");
         let binds = self.get_container_fact_list("HostConfig.Binds");
 
         if !mounts.is_empty() {
@@ -128,7 +128,7 @@ impl Inspector {
                             } else {
                                 String::new()
                             };
-                            options.push(format!("--volume {}{}{}", vol_src, dest, vol_mode));
+                            options.push(format!("--volume {}:{}{}", vol_src, dest, vol_mode));
                             if self.use_mount_flag {
                                 let mount_src = if typ == "volume" {
                                     vol_src.clone()
