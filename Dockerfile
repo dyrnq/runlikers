@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 FROM rust:slim-bookworm AS chef
-RUN apt-get update && apt-get install -y --no-install-recommends musl-tools && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends musl-tools ca-certificates && rm -rf /var/lib/apt/lists/*
 RUN cargo install cargo-chef --locked
 WORKDIR /app
 
@@ -14,8 +14,8 @@ RUN cargo chef cook --release --recipe-path recipe.json
 COPY . .
 RUN cargo build --release
 
-FROM alpine:3.21
-RUN apk add --no-cache ca-certificates docker-cli
+FROM debian:bookworm-slim AS runtime
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates docker.io && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /app/target/release/runlikers /usr/local/bin/runlikers
 ENTRYPOINT ["runlikers"]
 CMD ["--help"]
