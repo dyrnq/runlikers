@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM rust:1.85-alpine AS chef
+FROM rust:1.85-slim-bookworm AS chef
 RUN apk add --no-cache musl-dev
 RUN cargo install cargo-chef --locked
 WORKDIR /app
