@@ -16,6 +16,7 @@ Inspired by [runlike](https://github.com/lavie/runlike) (Python), rewritten in R
 - **Dual format** (`--mount`): outputs both `--volume` and `--mount` formats simultaneously
 - **`--stdin` mode**: pipe `docker inspect` JSON directly
 - **Remote hosts** (`-H`): supports `unix://`, `tcp://`, `ssh://`, `https://` schemes
+- **Pure Rust TLS**: HTTPS via `rustls`, no OpenSSL dependency
 - **No Python/runtime dependencies** — single static binary
 
 ## Installation
