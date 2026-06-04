@@ -152,7 +152,7 @@ jobs:
     name: Docker Image
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
-    needs: build
+    needs: lint
     steps:
       - name: Checkout
         uses: actions/checkout@v4
