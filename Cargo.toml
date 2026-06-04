@@ -14,7 +14,7 @@ clap = { version = "4", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
 shlex = "2"
 [target.'cfg(unix)'.dependencies]
-bollard = { version = "0.21", features = ["ssh"] }
+bollard = { version = "0.21", features = ["ssh", "ssl"] }
 
 [target.'cfg(windows)'.dependencies]
 bollard = "0.21"
