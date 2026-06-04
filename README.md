@@ -262,11 +262,7 @@ docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
 
 ```bash
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-    dyrnq/runlikers:full my-container
-
-# --inspect also works
-docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-    dyrnq/runlikers:full --inspect my-container
+    dyrnq/runlikers my-container
 ```
 
 ### Alias
