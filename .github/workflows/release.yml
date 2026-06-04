@@ -1,6 +1,6 @@
 name: Release
 
-"on":
+on:
   push:
     tags:
       - 'v*'
@@ -22,47 +22,30 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Linux x86_64 (glibc)
           - os: ubuntu-24.04
             target: x86_64-unknown-linux-gnu
             cross: false
-
-          # Linux x86_64 static (musl)
           - os: ubuntu-24.04
             target: x86_64-unknown-linux-musl
             cross: true
-
-          # Linux aarch64 static (musl)
           - os: ubuntu-24.04
             target: aarch64-unknown-linux-musl
             cross: true
-
-          # Linux aarch64 (glibc)
           - os: ubuntu-24.04
             target: aarch64-unknown-linux-gnu
             cross: true
-
-          # Linux armv7 static (musl)
           - os: ubuntu-24.04
             target: armv7-unknown-linux-musleabihf
             cross: true
-
-          # macOS x86_64 (cross-compiled from Apple Silicon)
           - os: macos-14
             target: x86_64-apple-darwin
             cross: false
-
-          # macOS aarch64 (Apple Silicon)
           - os: macos-14
             target: aarch64-apple-darwin
             cross: false
-
-          # Windows x86_64 (MSVC)
           - os: windows-2022
             target: x86_64-pc-windows-msvc
             cross: false
-
-          # Windows x86_64 (MinGW)
           - os: windows-2022
             target: x86_64-pc-windows-gnu
             cross: false
@@ -158,7 +141,7 @@ jobs:
         run: |
           PREV_TAG=$(git tag --sort=-creatordate | grep -v "${{ github.ref_name }}" | head -1)
           if [ -n "$PREV_TAG" ]; then
-            echo "## What's Changed (${PREV_TAG} → ${{ github.ref_name }})" > /tmp/changelog.md
+            echo "## What's Changed (${PREV_TAG} -> ${{ github.ref_name }})" > /tmp/changelog.md
             echo "" >> /tmp/changelog.md
             git log --oneline "${PREV_TAG}..HEAD" | sed 's/^/- /' >> /tmp/changelog.md
           else
@@ -175,27 +158,44 @@ jobs:
         with:
           body: |
             ## runlikers ${{ github.ref_name }}
-
-            Reverse-engineer `docker run` command line arguments from running containers.
-
             ${{ steps.changelog.outputs.changelog }}
-
-            ### Assets
-            - **x86_64-unknown-linux-gnu** — Linux x86_64 (glibc)
-            - **x86_64-unknown-linux-musl** — Linux x86_64 (static musl)
-            - **aarch64-unknown-linux-musl** — Linux ARM64 (static musl)
-            - **aarch64-unknown-linux-gnu** — Linux ARM64 (glibc)
-            - **armv7-unknown-linux-musleabihf** — Linux ARMv7 (static musl)
-            - **x86_64-apple-darwin** — macOS Intel
-            - **aarch64-apple-darwin** — macOS Apple Silicon
-            - **x86_64-pc-windows-msvc** — Windows x86_64 (MSVC)
-            - **x86_64-pc-windows-gnu** — Windows x86_64 (MinGW)
-
           files: release-assets/*
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ---- Publish to crates.io ----
+  publish:
+    name: Publish to crates.io
+    needs: release
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Check if version already published
+        id: check
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          PACKAGE="$(grep -m1 '^name' Cargo.toml | sed 's/.*\"\(.*\)\"/\1/')"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://crates.io/api/v1/crates/${PACKAGE}")
+          if [ "$STATUS" = "404" ]; then
+            echo "published=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          EXISTS=$(curl -s "https://crates.io/api/v1/crates/${PACKAGE}" | \
+            python3 -c "import sys,json; d=json.load(sys.stdin); print(str(any(v.get('num')=='${VERSION}' for v in d.get('versions',[]))).lower())" 2>/dev/null || echo "false")
+          echo "published=${EXISTS}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish
+        if: steps.check.outputs.published != 'true'
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo publish
 
   # ---- Docker image (multi-arch) ----
   docker:
@@ -219,12 +219,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -237,7 +231,7 @@ jobs:
             type=sha
             type=raw,value=latest,enable=${{ github.ref_type == 'tag' }}
 
-      # ghcr.io — using docker/build-push-action
+      # ghcr.io - using docker/build-push-action
       - name: Build and push to ghcr.io
         uses: docker/build-push-action@v6
         with:
@@ -249,7 +243,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Docker Hub — using buildx.sh
+      # Docker Hub - using buildx.sh
       - name: Build dockerfile (without push)
         run: |
           chmod +x ./buildx.sh
