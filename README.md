@@ -54,6 +54,12 @@ runlikers --inspect my-container
 # Combine: inspect CLI + tidy + pretty
 runlikers --inspect --tidy -p my-container
 
+# Custom indent (4 spaces) in pretty mode
+runlikers -p --indent '    ' my-container
+
+# Custom indent (2 spaces)
+runlikers -p --indent '  ' my-container
+
 # Emit --mount format alongside --volume
 runlikers --mount my-container
 
@@ -74,7 +80,8 @@ runlikers -H ssh://user@remote-host my-container
 | `[CONTAINER]`     | Container name or ID                                                    |
 | `--no-name`       | Omit `--name` from output                                               |
 | `--use-volume-id` | Keep the full volume ID instead of the short name                       |
-| `-p, --pretty`    | Multi-line output with `\` line continuations                           |
+| `-p, --pretty`    | Multi-line output with `\` line continuations                            |
+| `--indent`        | Pretty indent string (default: tab, e.g. `'    '` for 4 spaces)       |
 | `-s, --stdin`     | Read `docker inspect` JSON from stdin                                   |
 | `-l, --no-labels` | Omit `--label` from output                                              |
 | `--mount`         | Also emit `--mount` format alongside `--volume`                         |
