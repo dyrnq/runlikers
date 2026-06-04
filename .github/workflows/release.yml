@@ -238,15 +238,23 @@ jobs:
             type=raw,value=latest,enable=${{ github.ref_type == 'tag' }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
-          tags: |
-            ${{ steps.meta.outputs.tags }}
-            ${{ secrets.DOCKER_USERNAME }}/runlikers:${{ github.ref_name }}
-            ${{ secrets.DOCKER_USERNAME }}/runlikers:latest
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+        run: |
+          chmod +x ./buildx.sh
+          # Push to ghcr.io
+          ./buildx.sh \
+            --push true \
+            --repo ghcr.io/${{ github.repository_owner }} \
+            --tag ${{ github.ref_name }}
+          ./buildx.sh \
+            --push true \
+            --repo ghcr.io/${{ github.repository_owner }} \
+            --tag latest
+          # Push to Docker Hub
+          ./buildx.sh \
+            --push true \
+            --repo ${{ secrets.DOCKER_USERNAME }} \
+            --tag ${{ github.ref_name }}
+          ./buildx.sh \
+            --push true \
+            --repo ${{ secrets.DOCKER_USERNAME }} \
+            --tag latest
