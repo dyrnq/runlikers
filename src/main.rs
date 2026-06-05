@@ -111,10 +111,74 @@ async fn main() {
                 eprintln!("error reading stdin: {}", e);
                 std::process::exit(1);
             });
-        inspector.set_container_facts(&raw).unwrap_or_else(|e| {
-            eprintln!("error parsing JSON: {}", e);
-            std::process::exit(1);
-        });
-        println!("{}", inspector.format_cli());
+        let trimmed = raw.trim();
+        // Try JSON first
+        if trimmed.starts_with('[') {
+            // It's a docker inspect JSON array (one or more containers)
+            if let Ok(serde_json::Value::Array(arr)) = serde_json::from_str::<serde_json::Value>(trimmed) {
+                    if arr.is_empty() {
+                        eprintln!("error: empty JSON array from stdin");
+                        std::process::exit(1);
+                    }
+                    // Process each container in the array
+                    for (i, item) in arr.iter().enumerate() {
+                        let mut ins = Inspector::new(
+                            cli.no_name,
+                            cli.use_volume_id,
+                            cli.pretty,
+                            cli.no_labels,
+                        );
+                        ins.use_mount_flag = cli.mount;
+                        ins.tidy = cli.tidy;
+                        ins.container_facts = Some(item.clone());
+                        if i > 0 {
+                            println!();
+                        }
+                        print!("{}", ins.format_cli());
+                    }
+                    return;
+            }
+            // fallback: try as single JSON
+            inspector.set_container_facts(trimmed).unwrap_or_else(|e| {
+                eprintln!("error parsing JSON: {}", e);
+                std::process::exit(1);
+            });
+            println!("{}", inspector.format_cli());
+        } else {
+            // Not JSON - treat each line as a container name/ID
+            let mut first = true;
+            for line in trimmed.lines() {
+                let name = line.trim();
+                if name.is_empty() {
+                    continue;
+                }
+                if !first {
+                    println!();
+                }
+                first = false;
+                let output = std::process::Command::new("docker")
+                    .args(["inspect", name])
+                    .output()
+                    .unwrap_or_else(|e| {
+                        eprintln!("error running docker inspect {}: {}", name, e);
+                        std::process::exit(1);
+                    });
+                if !output.status.success() {
+                    let stderr = String::from_utf8_lossy(&output.stderr);
+                    eprintln!("error: docker inspect {} failed: {}", name, stderr.trim());
+                    std::process::exit(1);
+                }
+                let mut ins =
+                    Inspector::new(cli.no_name, cli.use_volume_id, cli.pretty, cli.no_labels);
+                ins.use_mount_flag = cli.mount;
+                ins.tidy = cli.tidy;
+                ins.set_container_facts(&String::from_utf8_lossy(&output.stdout))
+                    .unwrap_or_else(|e| {
+                        eprintln!("error parsing docker inspect output: {}", e);
+                        std::process::exit(1);
+                    });
+                print!("{}", ins.format_cli());
+            }
+        }
     }
 }
