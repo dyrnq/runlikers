@@ -45,7 +45,7 @@ struct Cli {
     tidy: bool,
 
     /// Pretty indent string (default: tab, e.g. '    ' for 4 spaces)
-    #[arg(long, default_value = "\\t")]
+    #[arg(long, default_value_t = String::from("\t"))]
     indent: String,
 
     /// Docker daemon host (e.g. unix:///var/run/docker.sock, tcp://192.168.1.100:2375, ssh://user@host)
@@ -90,7 +90,7 @@ async fn main() {
     inspector.use_mount_flag = cli.mount;
     inspector.tidy = cli.tidy;
     inspector.docker_host = cli.host;
-    inspector.indent = cli.indent;
+    inspector.indent = cli.indent.clone();
 
     if let Some(container) = &cli.container {
         if cli.inspect {
@@ -115,28 +115,27 @@ async fn main() {
         // Try JSON first
         if trimmed.starts_with('[') {
             // It's a docker inspect JSON array (one or more containers)
-            if let Ok(serde_json::Value::Array(arr)) = serde_json::from_str::<serde_json::Value>(trimmed) {
-                    if arr.is_empty() {
-                        eprintln!("error: empty JSON array from stdin");
-                        std::process::exit(1);
+            if let Ok(serde_json::Value::Array(arr)) =
+                serde_json::from_str::<serde_json::Value>(trimmed)
+            {
+                if arr.is_empty() {
+                    eprintln!("error: empty JSON array from stdin");
+                    std::process::exit(1);
+                }
+                // Process each container in the array
+                for (i, item) in arr.iter().enumerate() {
+                    let mut ins =
+                        Inspector::new(cli.no_name, cli.use_volume_id, cli.pretty, cli.no_labels);
+                    ins.use_mount_flag = cli.mount;
+                    ins.tidy = cli.tidy;
+                    ins.indent = cli.indent.clone();
+                    ins.container_facts = Some(item.clone());
+                    if i > 0 {
+                        println!();
                     }
-                    // Process each container in the array
-                    for (i, item) in arr.iter().enumerate() {
-                        let mut ins = Inspector::new(
-                            cli.no_name,
-                            cli.use_volume_id,
-                            cli.pretty,
-                            cli.no_labels,
-                        );
-                        ins.use_mount_flag = cli.mount;
-                        ins.tidy = cli.tidy;
-                        ins.container_facts = Some(item.clone());
-                        if i > 0 {
-                            println!();
-                        }
-                        print!("{}", ins.format_cli());
-                    }
-                    return;
+                    print!("{}", ins.format_cli());
+                }
+                return;
             }
             // fallback: try as single JSON
             inspector.set_container_facts(trimmed).unwrap_or_else(|e| {
@@ -172,6 +171,7 @@ async fn main() {
                     Inspector::new(cli.no_name, cli.use_volume_id, cli.pretty, cli.no_labels);
                 ins.use_mount_flag = cli.mount;
                 ins.tidy = cli.tidy;
+                ins.indent = cli.indent.clone();
                 ins.set_container_facts(&String::from_utf8_lossy(&output.stdout))
                     .unwrap_or_else(|e| {
                         eprintln!("error parsing docker inspect output: {}", e);
