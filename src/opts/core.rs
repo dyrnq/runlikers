@@ -4,6 +4,14 @@ use serde_json::Value;
 impl Inspector {
     pub fn parse_hostname(&self, options: &mut Vec<String>) {
         if let Some(h) = self.get_container_fact("Config.Hostname") {
+            if self.tidy {
+                // Docker auto-assigns hostname = container ID[:12] when not specified
+                if let Some(cid) = self.get_container_fact("Id") {
+                    if h == cid.get(..12).unwrap_or(&cid) {
+                        return;
+                    }
+                }
+            }
             options.push(format!("--hostname={}", h));
         }
     }
@@ -17,12 +25,22 @@ impl Inspector {
     }
 
     pub fn parse_macaddress(&self, options: &mut Vec<String>) {
-        let mac = self
-            .get_container_fact("Config.MacAddress")
-            .or_else(|| self.get_container_fact("NetworkSettings.MacAddress"));
-        if let Some(m) = mac {
-            if !m.is_empty() {
-                options.push(format!("--mac-address={}", m));
+        let config_mac = self.get_container_fact("Config.MacAddress");
+        // In tidy mode, only output if user explicitly specified --mac-address
+        // (Config.MacAddress is set). Docker auto-assigned MACs show up only
+        // in NetworkSettings.MacAddress with Config.MacAddress = None.
+        if self.tidy {
+            if let Some(m) = config_mac {
+                if !m.is_empty() {
+                    options.push(format!("--mac-address={}", m));
+                }
+            }
+        } else {
+            let mac = config_mac.or_else(|| self.get_container_fact("NetworkSettings.MacAddress"));
+            if let Some(m) = mac {
+                if !m.is_empty() {
+                    options.push(format!("--mac-address={}", m));
+                }
             }
         }
     }
@@ -206,9 +224,17 @@ impl Inspector {
 
     pub fn parse_workdir(&self, options: &mut Vec<String>) {
         if let Some(w) = self.get_container_fact("Config.WorkingDir") {
-            if !w.is_empty() {
-                options.push(format!("--workdir={}", w));
+            if w.is_empty() {
+                return;
             }
+            if self.tidy {
+                if let Some(img_w) = self.get_image_fact("Config.WorkingDir") {
+                    if w == img_w {
+                        return;
+                    }
+                }
+            }
+            options.push(format!("--workdir={}", w));
         }
     }
 
