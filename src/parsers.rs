@@ -104,14 +104,18 @@ impl Inspector {
 
         let cmd_parts = self.get_container_fact_list("Config.Cmd");
         if !cmd_parts.is_empty() {
-            let cmd_strs: Vec<String> = cmd_parts
-                .iter()
-                .map(|part| match part {
-                    Value::String(s) => self.quote(s),
-                    _ => part.to_string(),
-                })
-                .collect();
-            parameters.push(cmd_strs.join(" "));
+            let img_cmd_parts = self.get_image_fact_list("Config.Cmd");
+            // Skip if cmd matches the image default (user didn't override)
+            if cmd_parts != img_cmd_parts {
+                let cmd_strs: Vec<String> = cmd_parts
+                    .iter()
+                    .map(|part| match part {
+                        Value::String(s) => self.quote(s),
+                        _ => part.to_string(),
+                    })
+                    .collect();
+                parameters.push(cmd_strs.join(" "));
+            }
         }
 
         let joined = if self.pretty {
