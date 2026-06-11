@@ -6,7 +6,7 @@ use std::process::Command;
 #[command(
     name = "runlikers",
     about = "Reverse-engineer docker run command line arguments based on running containers",
-    version = "0.1.0"
+    version = env!("CARGO_PKG_VERSION")
 )]
 struct Cli {
     /// Container name or ID
