@@ -10,8 +10,8 @@ readme = "README.md"
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-clap = { version = "4", features = ["derive"] }
-tokio = { version = "1", features = ["full"] }
+clap = { version = "4.6", features = ["derive"] }
+tokio = { version = "1.53", features = ["full"] }
 shlex = "2"
 [target.'cfg(unix)'.dependencies]
 bollard = { version = "0.21", features = ["ssh", "ssl"] }
