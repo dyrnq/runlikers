@@ -37,10 +37,10 @@ jobs:
           - os: ubuntu-24.04
             target: armv7-unknown-linux-musleabihf
             cross: true
-          - os: macos-14
+          - os: macos-15
             target: x86_64-apple-darwin
             cross: false
-          - os: macos-14
+          - os: macos-15
             target: aarch64-apple-darwin
             cross: false
           - os: windows-2022
